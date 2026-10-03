@@ -208,6 +208,18 @@
   .store-metrics .rev { font-weight: 700; font-size: 14px; min-width: 100px; text-align: right; }
   .store-detail { padding: 4px 4px 16px 40px; }
   .store-detail table { font-size: 12.5px; }
+
+  table.daily-table th.grp { text-align: center; font-size: 11.5px; font-weight: 700; padding: 7px 10px; }
+  table.daily-table th.grp-rev { background: var(--jade-tint); color: var(--jade-deep); }
+  table.daily-table th.grp-qty { background: var(--caramel-tint); color: var(--caramel); }
+  table.daily-table td.grp-rev-cell, table.daily-table th.grp-rev-cell { background: color-mix(in srgb, var(--jade-tint) 45%, transparent); }
+  table.daily-table td.grp-qty-cell, table.daily-table th.grp-qty-cell { background: color-mix(in srgb, var(--caramel-tint) 45%, transparent); }
+  table.daily-table td.col-divider, table.daily-table th.col-divider { border-left: 2px solid var(--line); }
+  table.daily-table tbody tr.today-row td { background: var(--jade-tint) !important; font-weight: 600; }
+  table.daily-table tbody tr.today-row td:first-child { border-left: 3px solid var(--jade); }
+  table.daily-table tbody tr.future-row td { color: var(--ink-soft); opacity: 0.55; }
+  .pill.neutral { background: var(--line); color: var(--ink-soft); }
+  .today-badge { font-size: 10px; font-weight: 700; color: var(--jade); margin-left: 6px; }
   @media (max-width: 640px) {
     .store-metrics { gap: 10px; }
     .store-metrics .share { min-width: 90px; }
@@ -595,23 +607,35 @@ function renderDashboard(){
     out += '<div class="empty-state">Chưa có khoảng ngày chiến dịch để hiển thị.</div>';
   } else {
     var byDay = aggregateByDay(entries);
-    out += '<table><thead><tr><th>Ngày</th><th class="num">Mục tiêu DT</th><th class="num">DT đạt được</th><th class="num">% đạt DT</th><th class="num">DT còn thiếu</th><th class="num">Mục tiêu SL</th><th class="num">SL đạt được</th><th class="num">% đạt SL</th><th class="num">SL còn thiếu</th></tr></thead><tbody>';
+    var todayISO = todayStr();
+    out += '<table class="daily-table"><thead>';
+    out += '<tr><th rowspan="2" style="vertical-align:bottom;">Ngày</th><th colspan="4" class="grp grp-rev">Doanh thu</th><th colspan="4" class="grp grp-qty col-divider">Số lượng</th></tr>';
+    out += '<tr><th class="num grp-rev-cell">Mục tiêu</th><th class="num grp-rev-cell">Đạt được</th><th class="num grp-rev-cell">% đạt</th><th class="num grp-rev-cell">Còn thiếu</th>';
+    out += '<th class="num grp-qty-cell col-divider">Mục tiêu</th><th class="num grp-qty-cell">Đạt được</th><th class="num grp-qty-cell">% đạt</th><th class="num grp-qty-cell">Còn thiếu</th></tr>';
+    out += '</thead><tbody>';
     days.forEach(function(d){
       var rec = byDay[d] || {rev:0, ly:0};
+      var isFuture = d > todayISO;
+      var isToday = d === todayISO;
+      var rowClass = isToday ? "today-row" : (isFuture ? "future-row" : "");
       var p = dailyTarget>0 ? (rec.rev/dailyTarget*100) : 0;
       var missing = Math.max(0, dailyTarget - rec.rev);
-      var pillClass = p>=100 ? "good" : "bad";
+      var pillClass = isFuture ? "neutral" : (p>=100 ? "good" : "bad");
       var pQty = dailyQtyTarget>0 ? (rec.ly/dailyQtyTarget*100) : 0;
       var missingQty = Math.max(0, dailyQtyTarget - rec.ly);
-      var pillClassQty = pQty>=100 ? "good" : "bad";
-      out += '<tr><td>'+fmtDateVN(d)+'</td><td class="num">'+fmtVND(dailyTarget)+'</td><td class="num strong">'+fmtVND(rec.rev)+'</td>';
-      out += '<td class="num"><span class="pill '+pillClass+'">'+p.toFixed(0)+'%</span></td>';
-      out += '<td class="num">'+(missing>0 ? fmtVND(missing) : '<span class="pill good">Đã đạt</span>')+'</td>';
-      out += '<td class="num">'+fmtNum(dailyQtyTarget)+' ly</td><td class="num strong">'+fmtNum(rec.ly)+' ly</td>';
-      out += '<td class="num"><span class="pill '+pillClassQty+'">'+pQty.toFixed(0)+'%</span></td>';
-      out += '<td class="num">'+(missingQty>0 ? fmtNum(missingQty)+' ly' : '<span class="pill good">Đã đạt</span>')+'</td></tr>';
+      var pillClassQty = isFuture ? "neutral" : (pQty>=100 ? "good" : "bad");
+      var missingCell = isFuture ? '<span class="hint">Chưa tới</span>' : (missing>0 ? fmtVND(missing) : '<span class="pill good">Đã đạt</span>');
+      var missingQtyCell = isFuture ? '<span class="hint">Chưa tới</span>' : (missingQty>0 ? fmtNum(missingQty)+' ly' : '<span class="pill good">Đã đạt</span>');
+      out += '<tr class="'+rowClass+'"><td>'+fmtDateVN(d)+(isToday?'<span class="today-badge">HÔM NAY</span>':'')+'</td>';
+      out += '<td class="num grp-rev-cell">'+fmtVND(dailyTarget)+'</td><td class="num strong grp-rev-cell">'+fmtVND(rec.rev)+'</td>';
+      out += '<td class="num grp-rev-cell"><span class="pill '+pillClass+'">'+(isFuture?'—':p.toFixed(0)+'%')+'</span></td>';
+      out += '<td class="num grp-rev-cell">'+missingCell+'</td>';
+      out += '<td class="num grp-qty-cell col-divider">'+fmtNum(dailyQtyTarget)+' ly</td><td class="num strong grp-qty-cell">'+fmtNum(rec.ly)+' ly</td>';
+      out += '<td class="num grp-qty-cell"><span class="pill '+pillClassQty+'">'+(isFuture?'—':pQty.toFixed(0)+'%')+'</span></td>';
+      out += '<td class="num grp-qty-cell">'+missingQtyCell+'</td></tr>';
     });
     out += '</tbody></table>';
+    out += '<div class="hint" style="margin-top:10px;">🟢 Xanh = nhóm Doanh thu · 🟠 Nâu = nhóm Số lượng · Dòng mờ = ngày chưa tới (chưa tính là thiếu) · Dòng viền xanh = hôm nay.</div>';
   }
   out += '</div>';
 
