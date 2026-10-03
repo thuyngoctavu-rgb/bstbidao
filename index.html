@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Báo Cáo Chiến Dịch Trà Bí Đao</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --bg: #FAF7EF;
+    --bg-elevated: #FFFFFF;
+    --ink: #21301F;
+    --ink-soft: #5B6B57;
+    --line: #DDD6C4;
+    --jade: #3F6B52;
+    --jade-deep: #2C4D3B;
+    --jade-tint: #E7EFE6;
+    --caramel: #B9793F;
+    --caramel-tint: #F5E9DA;
+    --good: #3F6B52;
+    --bad: #B4432F;
+    --bad-tint: #F7E4DE;
+    --shadow: 0 1px 2px rgba(33,48,31,0.06);
+    font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171D16;
+      --bg-elevated: #202822;
+      --ink: #EDF1EA;
+      --ink-soft: #A6B2A0;
+      --line: #34402F;
+      --jade: #79B396;
+      --jade-deep: #9BCBB0;
+      --jade-tint: #223027;
+      --caramel: #E0A968;
+      --caramel-tint: #2E2419;
+      --good: #79B396;
+      --bad: #E08A73;
+      --bad-tint: #33211C;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171D16;
+    --bg-elevated: #202822;
+    --ink: #EDF1EA;
+    --ink-soft: #A6B2A0;
+    --line: #34402F;
+    --jade: #79B396;
+    --jade-deep: #9BCBB0;
+    --jade-tint: #223027;
+    --caramel: #E0A968;
+    --caramel-tint: #2E2419;
+    --good: #79B396;
+    --bad: #E08A73;
+    --bad-tint: #33211C;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { min-height: 100%; display: flex; flex-direction: column; }
+
+  header.topbar {
+    position: sticky; top: 0; z-index: 10;
+    padding: env(safe-area-inset-top, 0px) 0 0 0;
+    background: var(--jade-deep);
+    color: #F3F1E4;
+  }
+  .topbar-inner {
+    max-width: 1180px; margin: 0 auto;
+    padding: 18px 20px 0 20px;
+  }
+  .topbar h1 {
+    margin: 0 0 2px 0; font-size: 19px; font-weight: 700; letter-spacing: 0.1px;
+  }
+  .topbar p.sub { margin: 0 0 14px 0; font-size: 13px; color: #C9D8CB; }
+  nav.tabs {
+    display: flex; gap: 4px; overflow-x: auto; padding-bottom: 0;
+  }
+  nav.tabs button {
+    appearance: none; border: none; background: transparent; color: #C9D8CB;
+    padding: 9px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    border-radius: 8px 8px 0 0; white-space: nowrap; font-family: inherit;
+  }
+  nav.tabs button.active { background: var(--bg); color: var(--jade-deep); }
+  nav.tabs button:not(.active):hover { background: rgba(255,255,255,0.08); }
+
+  main {
+    flex: 1; width: 100%; max-width: 1180px; margin: 0 auto;
+    padding: 20px 20px 60px 20px;
+  }
+  .status-line {
+    font-size: 12px; color: var(--ink-soft); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); display: inline-block; }
+  .dot.warn { background: var(--caramel); }
+
+  h2.section-title {
+    font-size: 15px; font-weight: 700; margin: 30px 0 10px 0; color: var(--ink);
+  }
+  h2.section-title:first-child { margin-top: 0; }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 12px; margin-bottom: 6px;
+  }
+  .kpi-card {
+    background: var(--bg-elevated); border-left: 3px solid var(--jade);
+    border-radius: 6px; padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .kpi-card .label { font-size: 12px; color: var(--ink-soft); margin-bottom: 6px; }
+  .kpi-card .value { font-size: 21px; font-weight: 700; }
+  .kpi-card.bad { border-left-color: var(--bad); }
+  .kpi-card .value.bad { color: var(--bad); }
+  .kpi-card .value.good { color: var(--good); }
+
+  .card {
+    background: var(--bg-elevated); border-radius: 8px; padding: 16px;
+    box-shadow: var(--shadow); margin-bottom: 16px;
+  }
+
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  .table-scroll { overflow-x: auto; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 11.5px; text-transform: none; color: var(--ink-soft); font-weight: 600; }
+  tbody tr:hover { background: var(--jade-tint); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.strong { font-weight: 700; }
+  .barcell { display: flex; align-items: center; gap: 8px; min-width: 160px; }
+  .bar-track { flex: 1; height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; min-width: 60px; }
+  .bar-fill { height: 100%; background: var(--jade); }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .pill.good { background: var(--jade-tint); color: var(--good); }
+  .pill.bad { background: var(--bad-tint); color: var(--bad); }
+
+  label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); display: block; margin-bottom: 4px; }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    font-family: inherit; font-size: 14px; padding: 8px 10px; border-radius: 6px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%;
+  }
+  input[type=number] { text-align: right; }
+  .field { margin-bottom: 12px; }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-row > .field { flex: 1; min-width: 160px; }
+
+  button.btn {
+    appearance: none; border: none; cursor: pointer; font-family: inherit;
+    font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 7px;
+    background: var(--jade); color: #fff;
+  }
+  button.btn:hover { background: var(--jade-deep); }
+  button.btn.secondary { background: transparent; color: var(--jade); border: 1px solid var(--jade); }
+  button.btn.secondary:hover { background: var(--jade-tint); }
+  button.btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .qty-table input[type=number] { width: 78px; }
+  .qty-table td, .qty-table th { text-align: center; }
+  .qty-table td:first-child, .qty-table th:first-child { text-align: left; }
+
+  .hint { font-size: 12px; color: var(--ink-soft); margin-top: 6px; line-height: 1.5; }
+  .banner {
+    background: var(--caramel-tint); border: 1px solid var(--caramel); border-radius: 7px;
+    padding: 10px 14px; font-size: 13px; margin-bottom: 16px; color: var(--ink);
+  }
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--ink-soft); font-size: 13.5px;
+  }
+  .stores-chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: var(--jade-tint); color: var(--jade-deep); font-weight: 600;
+  }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .store-leaderboard { display: flex; flex-direction: column; }
+  .store-row {
+    display: flex; align-items: center; gap: 14px; padding: 11px 4px;
+    border-bottom: 1px solid var(--line); cursor: pointer;
+  }
+  .store-row:last-child { border-bottom: none; }
+  .store-row:hover { background: var(--jade-tint); }
+  .rank-badge {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--line);
+    color: var(--ink-soft); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12.5px; flex: 0 0 auto;
+  }
+  .rank-badge.top { background: var(--caramel); color: #fff; }
+  .store-info { flex: 1; min-width: 0; }
+  .store-info .name { font-weight: 700; font-size: 14px; }
+  .store-info .sub { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+  .store-metrics { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
+  .store-metrics .share { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+  .store-metrics .share .bar-track { width: 60px; }
+  .store-metrics .share span { font-size: 12.5px; color: var(--ink-soft); min-width: 38px; text-align: right; }
+  .store-metrics .rev { font-weight: 700; font-size: 14px; min-width: 100px; text-align: right; }
+  .store-detail { padding: 4px 4px 16px 40px; }
+  .store-detail table { font-size: 12.5px; }
+  @media (max-width: 640px) {
+    .store-metrics { gap: 10px; }
+    .store-metrics .share { min-width: 90px; }
+    .store-metrics .share .bar-track { width: 36px; }
+    .store-metrics .rev { min-width: 80px; }
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
+  code.tag { background: var(--jade-tint); color: var(--jade-deep); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ DỮ LIỆU CẤU HÌNH CHIẾN DỊCH ============ */
+
+var STORES = [
+  {code:"PHUCTEA004", name:"Thích Quảng Đức Long Khánh"},
+  {code:"PHUCTEA007", name:"Tôn Đức Thắng Long Thành"},
+  {code:"PHUCTEA056", name:"Bình Tân Vĩnh Long"},
+  {code:"PHUCTEA059", name:"Mỹ Phước Bến Cát"},
+  {code:"PHUCTEA062", name:"Bến Lức"},
+  {code:"PHUCTEA076", name:"Trị An"},
+  {code:"PHUCTEA094", name:"Ninh Phước"},
+  {code:"PHUCTEA099", name:"Bình Minh"},
+  {code:"PHUCTEA101", name:"Vĩnh An"},
+  {code:"PHUCTEA107", name:"Mỹ Phước 2 Bến Cát"},
+  {code:"PHUCTEA108", name:"Ô Môn"},
+  {code:"PHUCTEA111", name:"Bàu Bàng"},
+  {code:"PHUCTEACENTER001", name:"Cần Thơ"},
+  {code:"PHUCTEA114", name:"Mỹ Phước 3 Bến Cát"},
+  {code:"PHUCTEA116", name:"An Tây"},
+  {code:"PHUCTEA137", name:"Vĩnh Tân"},
+  {code:"PHUCTEA143", name:"Thới Hòa Bến Cát"},
+  {code:"PHUCTEA147", name:"Phú Lợi Thủ Dầu Một"},
+  {code:"PHUCTEA150", name:"Chử Đồng Tử Tân Bình"},
+  {code:"PHUCTEA158", name:"Đức Hòa Tây Ninh"},
+  {code:"PHUCTEA045", name:"Phú Tài"},
+  {code:"PHUCTEA138", name:"Trần Hoàng Na Cần Thơ"},
+  {code:"PHUCTEA149", name:"Hùng Vương Đồng Xoài"},
+  {code:"PHUCTEA095", name:"Cái Tắc"},
+  {code:"PHUCTEA156", name:"Đinh Đức Thiện Bình Chánh"},
+  {code:"PHUCTEA163", name:"Tân Ninh Tây Ninh"},
+  {code:"PHUCTEA166", name:"Tân Tiến Đồng Phú"},
+  {code:"PHUCTEA167", name:"Trường Thành Thới Lai"}
+];
+var STORE_MAP = {};
+STORES.forEach(function(s){ STORE_MAP[s.code] = s.name; });
+
+var ITEMS = [
+  {id:"HATCHIA", name:"Trà Bí Đao Hạt Chia"},
+  {id:"SUONGSAO", name:"Trà Bí Đao Sương Sáo"},
+  {id:"TCDEN", name:"Trà Bí Đao Trân Châu Đen"},
+  {id:"TCGION", name:"Trà Bí Đao Trân Châu Giòn"},
+  {id:"CHANHNHADAM", name:"Trà Bí Đao Chanh Nha Đam"},
+  {id:"TACNHADAM", name:"Trà Bí Đao Tắc Nha Đam"}
+];
+var ITEM_MAP = {};
+ITEMS.forEach(function(it){ ITEM_MAP[it.id] = it.name; });
+
+var SIZE_KEYS = ["S","M","L1L","X1L"];
+var SIZE_LABELS = {S:"Size S", M:"Size M", L1L:"Ly 1L", X1L:"Xô 1L"};
+var PRICE = {S:19000, M:22000, L1L:24000, X1L:27000};
+var TOPPING_PRICE = 6000;
+var TOPPING_LABEL = "Topping Thạch Bí Đao (thêm)";
+
+/* ============ STATE ============ */
+
+var state = {
+  tab: "dashboard",
+  db: null,
+  mode: "local", // "db" hoặc "local"
+  entries: {},   // docId -> {date, storeCode, items:{itemId:{S,M,L1L,X1L}}, toppingExtra}
+  settings: {totalTarget: 129816000, totalQtyTarget: 4808, systemTarget: 432695209, onlineChannelPct: 30, startDate: "", endDate: ""},
+  loaded: false,
+  expandedStore: null,
+  importRows: null,
+  importSkippedZero: 0
+};
+
+var root = document.getElementById("app");
+
+/* ============ TIỆN ÍCH ============ */
+
+function fmtVND(n){
+  n = Math.round(Number(n)||0);
+  return n.toLocaleString("vi-VN") + "đ";
+}
+function fmtNum(n){ return Math.round(Number(n)||0).toLocaleString("vi-VN"); }
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function docId(date, storeCode){ return date + "_" + storeCode; }
+function esc(s){
+  return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function emptyItems(){
+  var o = {};
+  ITEMS.forEach(function(it){ o[it.id] = {S:0,M:0,L1L:0,X1L:0}; });
+  return o;
+}
+function emptyItemsRevenue(){
+  var o = {};
+  ITEMS.forEach(function(it){ o[it.id] = {S:0,M:0,L1L:0,X1L:0}; });
+  return o;
+}
+function dateRangeArray(start, end){
+  var out = [];
+  if(!start || !end) return out;
+  var d = new Date(start+"T00:00:00");
+  var e = new Date(end+"T00:00:00");
+  if(isNaN(d) || isNaN(e) || d>e) return out;
+  while(d<=e){
+    out.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+// Doanh thu ưu tiên lấy đúng số tiền thật đã ghi nhận (itemsRevenue, từ cột "Tổng tiền" khi nhập từ file CSKH);
+// nếu dòng/ô nào không có số tiền thật (nhập tay thủ công, hoặc file không có cột Tổng tiền) thì mới tính theo bảng giá chuẩn.
+function entryTotals(entry){
+  var rev=0, ly=0;
+  ITEMS.forEach(function(it){
+    var sizes = (entry.items && entry.items[it.id]) || {};
+    var revSizes = (entry.itemsRevenue && entry.itemsRevenue[it.id]) || {};
+    SIZE_KEYS.forEach(function(sk){
+      var q = Number(sizes[sk]||0);
+      ly += q;
+      rev += (revSizes[sk]!=null ? Number(revSizes[sk]) : q*PRICE[sk]);
+    });
+  });
+  var topQ = Number(entry.toppingExtra||0);
+  rev += (entry.toppingRevenue!=null ? Number(entry.toppingRevenue) : topQ*TOPPING_PRICE);
+  return {rev:rev, ly:ly, toppingQty:topQ};
+}
+
+
+/* ============ KHỞI TẠO STORAGE (db capability hoặc localStorage) ============ */
+
+var LOCAL_KEY = "bidao_campaign_v1";
+
+var DEFAULT_SETTINGS = {totalTarget: 129816000, totalQtyTarget: 4808, systemTarget: 432695209, onlineChannelPct: 30, startDate: "", endDate: ""};
+
+function loadLocal(){
+  try{
+    var raw = localStorage.getItem(LOCAL_KEY);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      state.entries = parsed.entries || {};
+      state.settings = parsed.settings || Object.assign({}, DEFAULT_SETTINGS);
+    }
+  }catch(e){ /* bỏ qua, giữ mặc định */ }
+  state.loaded = true;
+  render();
+}
+function saveLocal(){
+  try{
+    localStorage.setItem(LOCAL_KEY, JSON.stringify({entries:state.entries, settings:state.settings}));
+  }catch(e){ /* im lặng nếu storage đầy/không khả dụng */ }
+}
+
+async function initStorage(){
+  var db = null;
+  try{
+    if(window.claude && typeof window.claude.use === "function"){
+      db = await window.claude.use("db");
+    }
+  }catch(e){ db = null; }
+
+  if(db){
+    state.db = db;
+    state.mode = "db";
+    try{
+      var settingsSnap = await db.doc("settings/campaign").get();
+      if(settingsSnap.exists){
+        state.settings = Object.assign({}, DEFAULT_SETTINGS, settingsSnap.data());
+      }
+    }catch(e){}
+
+    db.doc("settings/campaign").onSnapshot(function(snap){
+      if(snap.exists){
+        state.settings = Object.assign({}, DEFAULT_SETTINGS, snap.data());
+        if(state.tab === "dashboard" || state.tab === "settings") render();
+      }
+    }, function(err){ console.error("settings snapshot error", err); });
+
+    db.collection("entries").onSnapshot(function(qsnap){
+      var map = {};
+      qsnap.docs.forEach(function(d){
+        if(d.exists) map[d.id] = d.data();
+      });
+      state.entries = map;
+      state.loaded = true;
+      if(state.tab === "dashboard"){
+        render();
+      } else {
+        updateEnteredStoresChip();
+      }
+    }, function(err){ console.error("entries snapshot error", err); });
+
+    state.loaded = true;
+    render();
+  } else {
+    state.mode = "local";
+    loadLocal();
+  }
+}
+
+async function persistEntry(entryData){
+  var id = docId(entryData.date, entryData.storeCode);
+  state.entries[id] = entryData;
+  if(state.mode === "db" && state.db){
+    await state.db.collection("entries").doc(id).set(entryData);
+  } else {
+    saveLocal();
+  }
+}
+
+async function persistSettings(newSettings){
+  state.settings = newSettings;
+  if(state.mode === "db" && state.db){
+    await state.db.doc("settings/campaign").set(newSettings);
+  } else {
+    saveLocal();
+  }
+}
+
+async function getExistingEntry(date, storeCode){
+  var id = docId(date, storeCode);
+  if(state.mode === "db" && state.db){
+    try{
+      var snap = await state.db.collection("entries").doc(id).get();
+      if(snap.exists) return snap.data();
+    }catch(e){}
+    return null;
+  } else {
+    return state.entries[id] || null;
+  }
+}
+
+/* ============ TỔNG HỢP SỐ LIỆU ============ */
+
+function allEntriesArray(){
+  return Object.keys(state.entries).map(function(k){ return state.entries[k]; });
+}
+function entriesInRange(start,end){
+  return allEntriesArray().filter(function(e){
+    if(!start || !end) return true;
+    return e.date >= start && e.date <= end;
+  });
+}
+function aggregateByDay(entries){
+  var m = {};
+  entries.forEach(function(e){
+    var t = entryTotals(e);
+    if(!m[e.date]) m[e.date] = {rev:0, ly:0};
+    m[e.date].rev += t.rev;
+    m[e.date].ly += t.ly;
+  });
+  return m;
+}
+function aggregateByStore(entries){
+  var m = {};
+  entries.forEach(function(e){
+    var t = entryTotals(e);
+    if(!m[e.storeCode]) m[e.storeCode] = {rev:0, ly:0};
+    m[e.storeCode].rev += t.rev;
+    m[e.storeCode].ly += t.ly;
+  });
+  return m;
+}
+function aggregateByItem(entries){
+  var m = {};
+  ITEMS.forEach(function(it){ m[it.id] = {S:0,M:0,L1L:0,X1L:0, rev:0}; });
+  var topping = {qty:0, rev:0};
+  entries.forEach(function(e){
+    ITEMS.forEach(function(it){
+      var sizes = (e.items && e.items[it.id]) || {};
+      var revSizes = (e.itemsRevenue && e.itemsRevenue[it.id]) || {};
+      SIZE_KEYS.forEach(function(sk){
+        var q = Number(sizes[sk]||0);
+        m[it.id][sk] += q;
+        m[it.id].rev += (revSizes[sk]!=null ? Number(revSizes[sk]) : q*PRICE[sk]);
+      });
+    });
+    var topQ = Number(e.toppingExtra||0);
+    topping.qty += topQ;
+    topping.rev += (e.toppingRevenue!=null ? Number(e.toppingRevenue) : topQ*TOPPING_PRICE);
+  });
+  return {items:m, topping:topping};
+}
+
+/* ============ RENDER: SHELL ============ */
+
+var TABS = [
+  {id:"dashboard", label:"Tổng quan"},
+  {id:"dataentry", label:"Nhập liệu"},
+  {id:"import", label:"Nhập từ Excel/CSV"},
+  {id:"settings", label:"Mục tiêu &amp; Cài đặt"}
+];
+
+function render(){
+  var statusDot = state.mode === "db" ? "" : "warn";
+  var statusText = state.mode === "db"
+    ? "Dữ liệu đang lưu trực tuyến — cả nhóm nhập liệu sẽ thấy cùng một báo cáo, cập nhật theo thời gian thực."
+    : "Chưa kết nối lưu trữ nhiều người dùng — dữ liệu chỉ lưu trên trình duyệt này (chế độ xem/thử tạm thời).";
+
+  var html = "";
+  html += '<header class="topbar"><div class="topbar-inner">';
+  html += '<h1>🧋 Báo cáo Chiến dịch Trà Bí Đao</h1>';
+  html += '<p class="sub">Theo dõi mục tiêu, doanh thu và món bán chạy toàn hệ thống nhượng quyền</p>';
+  html += '<nav class="tabs">';
+  TABS.forEach(function(t){
+    html += '<button data-tab="'+t.id+'" class="'+(state.tab===t.id?'active':'')+'">'+t.label+'</button>';
+  });
+  html += '</nav></div></header>';
+  html += '<main>';
+  html += '<div class="status-line"><span class="dot '+statusDot+'"></span>'+statusText+'</div>';
+
+  if(!state.loaded){
+    html += '<div class="empty-state">Đang tải dữ liệu…</div>';
+  } else if(state.tab === "dashboard"){
+    html += renderDashboard();
+  } else if(state.tab === "dataentry"){
+    html += renderDataEntry();
+  } else if(state.tab === "import"){
+    html += renderImport();
+  } else if(state.tab === "settings"){
+    html += renderSettings();
+  }
+  html += '</main>';
+
+  root.innerHTML = html;
+  bindEvents();
+}
+
+function switchTab(tab){
+  state.tab = tab;
+  render();
+}
+
+/* ============ RENDER: DASHBOARD ============ */
+
+function renderDashboard(){
+  var s = state.settings;
+  var hasRange = s.startDate && s.endDate;
+  var days = hasRange ? dateRangeArray(s.startDate, s.endDate) : [];
+  var dailyTarget = (hasRange && days.length>0) ? (Number(s.totalTarget||0) / days.length) : 0;
+  var dailyQtyTarget = (hasRange && days.length>0) ? (Number(s.totalQtyTarget||0) / days.length) : 0;
+
+  var entries = hasRange ? entriesInRange(s.startDate, s.endDate) : allEntriesArray();
+  var totalRev = 0, totalLy = 0;
+  entries.forEach(function(e){ var t = entryTotals(e); totalRev += t.rev; totalLy += t.ly; });
+  var pct = s.totalTarget>0 ? (totalRev / Number(s.totalTarget) * 100) : null;
+  var pctQty = s.totalQtyTarget>0 ? (totalLy / Number(s.totalQtyTarget) * 100) : null;
+
+  var out = "";
+
+  if(!hasRange){
+    out += '<div class="banner">Chị chưa thiết lập ngày chạy chiến dịch. Vào tab <strong>“Mục tiêu &amp; Cài đặt”</strong> để nhập, hệ thống sẽ tự chia mục tiêu theo từng ngày.</div>';
+  }
+
+  out += '<div class="kpi-grid">';
+  out += kpiCard("Mục tiêu doanh thu", fmtVND(s.totalTarget||0));
+  out += kpiCard("Doanh thu đạt được", fmtVND(totalRev), pct!=null && pct<100 ? "bad" : "");
+  out += kpiCard("Tỷ lệ đạt doanh thu", pct==null ? "—" : pct.toFixed(1)+"%", pct!=null && pct<100 ? "bad" : "good");
+  out += '</div>';
+  out += '<div class="kpi-grid" style="margin-top:10px;">';
+  out += kpiCard("Mục tiêu số lượng", fmtNum(s.totalQtyTarget||0)+" ly");
+  out += kpiCard("Số lượng đạt được", fmtNum(totalLy)+" ly", pctQty!=null && pctQty<100 ? "bad" : "");
+  out += kpiCard("Tỷ lệ đạt số lượng", pctQty==null ? "—" : pctQty.toFixed(1)+"%", pctQty!=null && pctQty<100 ? "bad" : "good");
+  out += '</div>';
+
+  // Bảng theo ngày
+  out += '<h2 class="section-title">Mục tiêu &amp; kết quả theo ngày</h2>';
+  out += '<div class="card table-scroll">';
+  if(!hasRange || days.length===0){
+    out += '<div class="empty-state">Chưa có khoảng ngày chiến dịch để hiển thị.</div>';
+  } else {
+    var byDay = aggregateByDay(entries);
+    out += '<table><thead><tr><th>Ngày</th><th class="num">Mục tiêu DT</th><th class="num">DT đạt được</th><th class="num">% đạt DT</th><th class="num">DT còn thiếu</th><th class="num">Mục tiêu SL</th><th class="num">SL đạt được</th><th class="num">% đạt SL</th><th class="num">SL còn thiếu</th></tr></thead><tbody>';
+    days.forEach(function(d){
+      var rec = byDay[d] || {rev:0, ly:0};
+      var p = dailyTarget>0 ? (rec.rev/dailyTarget*100) : 0;
+      var missing = Math.max(0, dailyTarget - rec.rev);
+      var pillClass = p>=100 ? "good" : "bad";
+      var pQty = dailyQtyTarget>0 ? (rec.ly/dailyQtyTarget*100) : 0;
+      var missingQty = Math.max(0, dailyQtyTarget - rec.ly);
+      var pillClassQty = pQty>=100 ? "good" : "bad";
+      out += '<tr><td>'+fmtDateVN(d)+'</td><td class="num">'+fmtVND(dailyTarget)+'</td><td class="num strong">'+fmtVND(rec.rev)+'</td>';
+      out += '<td class="num"><span class="pill '+pillClass+'">'+p.toFixed(0)+'%</span></td>';
+      out += '<td class="num">'+(missing>0 ? fmtVND(missing) : '<span class="pill good">Đã đạt</span>')+'</td>';
+      out += '<td class="num">'+fmtNum(dailyQtyTarget)+' ly</td><td class="num strong">'+fmtNum(rec.ly)+' ly</td>';
+      out += '<td class="num"><span class="pill '+pillClassQty+'">'+pQty.toFixed(0)+'%</span></td>';
+      out += '<td class="num">'+(missingQty>0 ? fmtNum(missingQty)+' ly' : '<span class="pill good">Đã đạt</span>')+'</td></tr>';
+    });
+    out += '</tbody></table>';
+  }
+  out += '</div>';
+
+  // Doanh thu theo cửa hàng (xếp hạng)
+  out += '<h2 class="section-title">Doanh thu theo cửa hàng (xếp hạng trên '+STORES.length+' CH)</h2>';
+  out += '<div class="hint" style="margin-bottom:8px;">Bấm vào một cửa hàng để xem doanh thu &amp; số ly bán ra theo từng món.</div>';
+  out += '<div class="card">' + renderStoreLeaderboard(entries) + '</div>';
+
+  // Top món bán chạy
+  out += '<h2 class="section-title">Top món bán chạy (số ly theo size &amp; doanh thu)</h2>';
+  out += '<div class="card table-scroll">';
+  var agg = aggregateByItem(entries);
+  var itemRows = ITEMS.map(function(it){
+    var d = agg.items[it.id];
+    var totalQty = SIZE_KEYS.reduce(function(a,k){ return a + d[k]; }, 0);
+    return {name: it.name, S:d.S, M:d.M, L1L:d.L1L, X1L:d.X1L, totalQty:totalQty, rev:d.rev};
+  }).sort(function(a,b){ return b.rev - a.rev; });
+  out += '<table><thead><tr><th>Món</th><th class="num">Size S</th><th class="num">Size M</th><th class="num">Ly 1L</th><th class="num">Xô 1L</th><th class="num">Tổng ly</th><th class="num">Doanh thu</th></tr></thead><tbody>';
+  itemRows.forEach(function(r){
+    out += '<tr><td>'+esc(r.name)+'</td><td class="num">'+fmtNum(r.S)+'</td><td class="num">'+fmtNum(r.M)+'</td><td class="num">'+fmtNum(r.L1L)+'</td><td class="num">'+fmtNum(r.X1L)+'</td><td class="num strong">'+fmtNum(r.totalQty)+'</td><td class="num strong">'+fmtVND(r.rev)+'</td></tr>';
+  });
+  out += '<tr><td>'+esc(TOPPING_LABEL)+'</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num strong">'+fmtNum(agg.topping.qty)+' phần</td><td class="num strong">'+fmtVND(agg.topping.rev)+'</td></tr>';
+  out += '</tbody></table>';
+  out += '</div>';
+
+  out += '<div class="toolbar"><button class="btn secondary" id="btn-export">Xuất báo cáo CSV</button></div>';
+
+  return out;
+}
+
+function renderStoreLeaderboard(entries){
+  var byStore = aggregateByStore(entries);
+  var totalRevAll = 0;
+  STORES.forEach(function(s){ totalRevAll += (byStore[s.code] ? byStore[s.code].rev : 0); });
+  var rows = STORES.map(function(s){
+    var d = byStore[s.code] || {rev:0, ly:0};
+    return {code:s.code, name:s.name, rev:d.rev, ly:d.ly};
+  }).sort(function(a,b){ return b.rev - a.rev; });
+  var maxRev = rows.length ? (rows[0].rev || 1) : 1;
+
+  var html = '<div class="store-leaderboard">';
+  rows.forEach(function(r, idx){
+    var rank = idx+1;
+    var share = totalRevAll>0 ? (r.rev/totalRevAll*100) : 0;
+    var barWidth = maxRev>0 ? Math.max(r.rev>0?2:0, Math.round(r.rev/maxRev*100)) : 0;
+    var expanded = state.expandedStore === r.code;
+    html += '<div class="store-row" data-store="'+r.code+'">';
+    html += '<div class="rank-badge'+(rank<=3?' top':'')+'">'+rank+'</div>';
+    html += '<div class="store-info"><div class="name">'+esc(r.name)+'</div><div class="sub">'+esc(r.code)+' · '+fmtNum(r.ly)+' ly</div></div>';
+    html += '<div class="store-metrics">';
+    html += '<div class="share"><div class="bar-track"><div class="bar-fill" style="width:'+barWidth+'%"></div></div><span>'+share.toFixed(1)+'%</span></div>';
+    html += '<div class="rev">'+fmtVND(r.rev)+'</div>';
+    html += '</div></div>';
+    if(expanded){
+      html += renderStoreDetailRow(r.code, entries);
+    }
+  });
+  html += '</div>';
+  if(rows.every(function(r){return r.rev===0;})){
+    html = '<div class="empty-state">Chưa có dữ liệu doanh thu cửa hàng nào trong khoảng thời gian này.</div>';
+  }
+  return html;
+}
+
+function renderStoreDetailRow(code, entries){
+  var filtered = entries.filter(function(e){ return e.storeCode===code; });
+  var agg = aggregateByItem(filtered);
+  var rows = ITEMS.map(function(it){
+    var d = agg.items[it.id];
+    var totalQty = SIZE_KEYS.reduce(function(a,k){ return a + d[k]; }, 0);
+    return {name: it.name, qty: totalQty, rev: d.rev};
+  }).sort(function(a,b){ return b.rev - a.rev; });
+  var out = '<div class="store-detail table-scroll"><table><thead><tr><th>Món</th><th class="num">Số ly</th><th class="num">Doanh thu</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    out += '<tr><td>'+esc(r.name)+'</td><td class="num">'+fmtNum(r.qty)+'</td><td class="num">'+fmtVND(r.rev)+'</td></tr>';
+  });
+  if(agg.topping.qty>0){
+    out += '<tr><td>'+esc(TOPPING_LABEL)+'</td><td class="num">'+fmtNum(agg.topping.qty)+' phần</td><td class="num">'+fmtVND(agg.topping.rev)+'</td></tr>';
+  }
+  out += '</tbody></table></div>';
+  return out;
+}
+
+function kpiCard(label, value, cls){
+  cls = cls || "";
+  return '<div class="kpi-card '+(cls==="bad"?"bad":"")+'"><div class="label">'+esc(label)+'</div><div class="value '+cls+'">'+value+'</div></div>';
+}
+function fmtDateVN(d){
+  var parts = d.split("-");
+  return parts[2]+"/"+parts[1]+"/"+parts[0];
+}
+
+/* ============ RENDER: NHẬP LIỆU ============ */
+
+function renderDataEntry(){
+  var out = "";
+  out += '<div class="card">';
+  out += '<div class="field-row">';
+  out += '<div class="field"><label>Ngày</label><input type="date" id="de-date" value="'+todayStr()+'"></div>';
+  out += '<div class="field"><label>Cửa hàng</label><select id="de-store">';
+  STORES.forEach(function(s){ out += '<option value="'+s.code+'">'+s.code+' — '+esc(s.name)+'</option>'; });
+  out += '</select></div>';
+  out += '</div>';
+  out += '<div class="hint">Chọn ngày và cửa hàng để nhập/sửa số ly bán ra. Nếu ngày này đã có dữ liệu, hệ thống sẽ tự tải lên để chỉnh sửa.</div>';
+  out += '</div>';
+
+  out += '<div class="card table-scroll">';
+  out += '<table class="qty-table"><thead><tr><th>Món</th><th>Size S</th><th>Size M</th><th>Ly 1L</th><th>Xô 1L</th></tr></thead><tbody id="de-tbody">';
+  ITEMS.forEach(function(it){
+    out += '<tr><td>'+esc(it.name)+'</td>';
+    SIZE_KEYS.forEach(function(sk){
+      out += '<td><input type="number" min="0" step="1" value="0" data-item="'+it.id+'" data-size="'+sk+'"></td>';
+    });
+    out += '</tr>';
+  });
+  out += '</tbody></table>';
+  out += '<div class="field" style="max-width:260px;margin-top:14px;"><label>'+esc(TOPPING_LABEL)+' (số phần, '+fmtVND(TOPPING_PRICE)+'/phần)</label><input type="number" min="0" step="1" value="0" id="de-topping"></div>';
+  out += '<div class="hint" id="de-preview" style="margin-top:6px;"></div>';
+  out += '<div class="toolbar" style="margin-top:14px;"><button class="btn" id="de-save">Lưu dữ liệu ngày này</button><span id="de-save-msg" class="hint"></span></div>';
+  out += '</div>';
+
+  out += '<div class="card"><div class="label" style="font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;">Cửa hàng đã nhập dữ liệu cho ngày đang chọn</div><div id="de-entered-chips" class="stores-chip-list"></div></div>';
+
+  return out;
+}
+
+function currentDataEntryDate(){
+  var el = document.getElementById("de-date");
+  return el ? el.value : todayStr();
+}
+
+function updateEnteredStoresChip(){
+  var container = document.getElementById("de-entered-chips");
+  if(!container) return;
+  var date = currentDataEntryDate();
+  var codes = Object.keys(state.entries).filter(function(id){
+    return state.entries[id].date === date;
+  }).map(function(id){ return state.entries[id].storeCode; });
+  if(codes.length===0){
+    container.innerHTML = '<span class="hint">Chưa có cửa hàng nào nhập cho ngày này.</span>';
+    return;
+  }
+  container.innerHTML = codes.map(function(c){ return '<span class="chip">'+esc(c)+'</span>'; }).join("");
+}
+
+async function loadEntryIntoForm(){
+  var date = document.getElementById("de-date").value;
+  var storeCode = document.getElementById("de-store").value;
+  var existing = await getExistingEntry(date, storeCode);
+  var tbody = document.getElementById("de-tbody");
+  if(!tbody) return;
+  var items = (existing && existing.items) ? existing.items : emptyItems();
+  ITEMS.forEach(function(it){
+    SIZE_KEYS.forEach(function(sk){
+      var input = tbody.querySelector('input[data-item="'+it.id+'"][data-size="'+sk+'"]');
+      if(input) input.value = (items[it.id] && items[it.id][sk]) || 0;
+    });
+  });
+  var topInput = document.getElementById("de-topping");
+  if(topInput) topInput.value = (existing && existing.toppingExtra) || 0;
+  updateDataEntryPreview();
+  updateEnteredStoresChip();
+}
+
+function updateDataEntryPreview(){
+  var tbody = document.getElementById("de-tbody");
+  if(!tbody) return;
+  var items = emptyItems();
+  ITEMS.forEach(function(it){
+    SIZE_KEYS.forEach(function(sk){
+      var input = tbody.querySelector('input[data-item="'+it.id+'"][data-size="'+sk+'"]');
+      items[it.id][sk] = Number((input && input.value) || 0);
+    });
+  });
+  var topping = Number((document.getElementById("de-topping")||{}).value || 0);
+  var t = entryTotals({items:items, toppingExtra: topping});
+  var el = document.getElementById("de-preview");
+  if(el) el.textContent = "Tạm tính: " + fmtNum(t.ly) + " ly, doanh thu " + fmtVND(t.rev) + (topping>0 ? " (đã gồm " + fmtNum(topping) + " phần topping thêm)" : "");
+}
+
+async function saveDataEntryForm(){
+  var date = document.getElementById("de-date").value;
+  var storeCode = document.getElementById("de-store").value;
+  if(!date){ alert("Vui lòng chọn ngày."); return; }
+  var tbody = document.getElementById("de-tbody");
+  var items = emptyItems();
+  ITEMS.forEach(function(it){
+    SIZE_KEYS.forEach(function(sk){
+      var input = tbody.querySelector('input[data-item="'+it.id+'"][data-size="'+sk+'"]');
+      items[it.id][sk] = Math.max(0, Number((input && input.value) || 0));
+    });
+  });
+  var topping = Math.max(0, Number((document.getElementById("de-topping")||{}).value || 0));
+  var entryData = {
+    date: date, storeCode: storeCode, storeName: STORE_MAP[storeCode] || storeCode,
+    items: items, toppingExtra: topping, updatedAt: Date.now()
+  };
+  var msgEl = document.getElementById("de-save-msg");
+  try{
+    if(msgEl) msgEl.textContent = "Đang lưu…";
+    await persistEntry(entryData);
+    if(msgEl) msgEl.textContent = "Đã lưu lúc " + new Date().toLocaleTimeString("vi-VN");
+    updateEnteredStoresChip();
+  }catch(e){
+    console.error(e);
+    if(msgEl) msgEl.textContent = "Lỗi khi lưu: " + (e && e.message ? e.message : "không rõ nguyên nhân");
+  }
+}
+
+/* ============ RENDER: IMPORT CSV ============ */
+
+function csvTemplateText(){
+  var lines = ["Ngay,MaCH,MaMon,Size,SoLuong"];
+  lines.push("2026-10-01,PHUCTEA004,HATCHIA,S,10");
+  lines.push("2026-10-01,PHUCTEA004,TCDEN,M,5");
+  lines.push("2026-10-01,PHUCTEA004,TOPPING,PHAN,3");
+  return lines.join("\n");
+}
+
+// Tên món chuẩn (không dấu ngoặc size) -> itemId, để đọc trực tiếp file xuất từ hệ thống CSKH
+var ITEM_NAME_TO_ID = {};
+ITEMS.forEach(function(it){ ITEM_NAME_TO_ID[it.name.trim().toLowerCase()] = it.id; });
+
+function renderImport(){
+  var out = "";
+  out += '<div class="card">';
+  out += '<div class="label" style="font-weight:700;font-size:14px;margin-bottom:8px;">Nhập trực tiếp file xuất từ hệ thống CSKH</div>';
+  out += '<div class="hint">Web tự đọc đúng file "Chi tiết đơn hàng theo ngày" chị vẫn dùng, với các cột: <code class="tag">NGÀY</code>, <code class="tag">Cửa hàng</code>, <code class="tag">Tên món</code>, <code class="tag">Số lượng</code>, <code class="tag">Đơn vị tính</code>, <code class="tag">Tổng tiền</code> (cột Số điện thoại, Ghi chú món không dùng đến). <strong>Doanh thu lấy đúng theo số tiền thật ở cột Tổng tiền</strong> của từng dòng (không tự tính lại theo bảng giá), nên sẽ khớp với số liệu gốc kể cả khi có dòng ghi giá lệch chuẩn. Riêng <strong>dòng nào có Tổng tiền = 0đ sẽ tự động bị bỏ qua</strong>, không tính vào số lượng ly bán ra.<br><br>';
+  out += 'Size được nhận diện tự động: không có "(...)" phía sau tên món → <strong>Size S</strong>; có "(Size M)" → <strong>Size M</strong>; có "1L" trong tên món (dù ghi "Size 1L" hay "Xô 1L") thì web sẽ xem cột <strong>Đơn vị tính</strong> là "Ly" hay "Xô" để phân biệt <strong>Ly 1L</strong> hay <strong>Xô 1L</strong> cho chính xác.<br><br>';
+  out += '<strong>Lưu ý:</strong> khi nhập, dữ liệu của đúng (ngày + cửa hàng) có trong file sẽ được <strong>thay thế toàn bộ</strong> bằng số liệu tính từ file — nên nếu nhập lại file đã sửa, hoặc nhập lại file cũ, sẽ không bị cộng dồn trùng lặp.</div>';
+  out += '<div class="toolbar" style="margin-top:12px;"><button class="btn secondary" id="btn-template">Tải file mẫu CSV (định dạng rút gọn)</button></div>';
+  out += '</div>';
+
+  out += '<div class="card">';
+  out += '<label>Chọn file CSV để nhập (xuất trực tiếp từ hệ thống, không cần chỉnh sửa)</label>';
+  out += '<input type="file" id="import-file" accept=".csv,text/csv">';
+  out += '<div id="import-preview"></div>';
+  out += '</div>';
+
+  return out;
+}
+
+function convertDateToISO(raw){
+  raw = (raw||"").trim();
+  var m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m){
+    var dd = m[1].length<2 ? "0"+m[1] : m[1];
+    var mm = m[2].length<2 ? "0"+m[2] : m[2];
+    return m[3]+"-"+mm+"-"+dd;
+  }
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  return null;
+}
+
+function preprocessRawCSV(text){
+  var lines = text.split(/\r\n|\n|\r/);
+  var headerIdx = 0;
+  for(var i=0;i<Math.min(lines.length,6);i++){
+    var low = lines[i].toLowerCase();
+    var looksLikeHeader = low.indexOf("tên món")>-1 || low.indexOf("mamon")>-1 ||
+      (low.indexOf("số lượng")>-1 && low.indexOf("đơn vị tính")>-1);
+    if(looksLikeHeader){ headerIdx = i; break; }
+  }
+  return lines.slice(headerIdx).join("\n");
+}
+
+function parseCSV(rawText){
+  var text = preprocessRawCSV(rawText);
+  var result = Papa.parse(text, {
+    header: true, skipEmptyLines: true,
+    transformHeader: function(h){ return (h||"").trim(); }
+  });
+  var fields = (result.meta && result.meta.fields) || [];
+  var isRealExport = fields.indexOf("Tên món") > -1 || fields.indexOf("Cửa hàng") > -1;
+  return isRealExport ? parseRealExportRows(result.data||[]) : parseTemplateRows(result.data||[]);
+}
+
+function parseMoneyVN(raw){
+  // "24,000" hoặc "0,000" -> 24000 / 0 (dấu phẩy là phân cách nghìn trong file xuất)
+  var s = (raw||"").toString().trim();
+  if(s==="") return NaN;
+  s = s.replace(/[^\d.,-]/g,"").replace(/,/g,"");
+  return Number(s);
+}
+
+// Định dạng file thật xuất từ hệ thống CSKH: NGÀY, Cửa hàng, Số điện thoại, Tên món, Số lượng, Đơn vị tính, Tổng tiền, Ghi chú món
+function parseRealExportRows(data){
+  var rows = [];
+  var skippedZero = 0;
+  data.forEach(function(r, idx){
+    var line = idx+2;
+    var dateRaw = (r["NGÀY"]||"").trim();
+    var storeRaw = (r["Cửa hàng"]||"").trim();
+    var monRaw = (r["Tên món"]||"").trim();
+    var qtyRaw = (r["Số lượng"]||"").toString().trim();
+    var dvt = (r["Đơn vị tính"]||"").trim().toLowerCase();
+    var tongTienRaw = r["Tổng tiền"];
+
+    if(!dateRaw && !storeRaw && !monRaw) return; // bỏ qua dòng trắng
+
+    // Bỏ hẳn các dòng có Tổng tiền = 0 (dòng ghi log trùng, không tính là đơn bán thật)
+    var tongTien = parseMoneyVN(tongTienRaw);
+    if(!isNaN(tongTien) && tongTien === 0){ skippedZero++; return; }
+
+    var rowErrors = [];
+    var date = convertDateToISO(dateRaw);
+    if(!date) rowErrors.push("ngày không đọc được (\""+dateRaw+"\")");
+
+    var storeCode = storeRaw.split(" - ")[0].trim();
+    if(!STORE_MAP[storeCode]) rowErrors.push("mã cửa hàng không tồn tại (\""+storeRaw+"\")");
+
+    var m = monRaw.match(/^(.*?)(?:\s*\(([^)]*)\))?\s*$/);
+    var baseName = (m ? m[1] : monRaw).trim();
+    var suffix = (m && m[2]) ? m[2].trim().toLowerCase() : "";
+    var itemId = ITEM_NAME_TO_ID[baseName.toLowerCase()];
+    if(!itemId) rowErrors.push("không nhận diện được tên món (\""+monRaw+"\")");
+
+    var size = null;
+    if(suffix === ""){
+      size = "S";
+    } else if(suffix.indexOf("size m")>-1 || suffix === "m"){
+      size = "M";
+    } else if(suffix.indexOf("1l")>-1){
+      size = (dvt.indexOf("xô")>-1 || dvt.indexOf("xo")>-1) ? "X1L" : "L1L";
+    } else {
+      rowErrors.push("không nhận diện được size (\""+suffix+"\")");
+    }
+
+    var qty = Number(qtyRaw.replace(",", "."));
+    if(isNaN(qty) || qty<0) rowErrors.push("số lượng không hợp lệ (\""+qtyRaw+"\")");
+
+    rows.push({line:line, date:date||dateRaw, store:storeCode||storeRaw, mon:itemId||baseName, size:size||"?", qty:qty, amount: isNaN(tongTien) ? undefined : tongTien, errors:rowErrors});
+  });
+  return {rows:rows, skippedZero:skippedZero};
+}
+
+// Định dạng rút gọn: Ngay, MaCH, MaMon, Size, SoLuong
+function parseTemplateRows(data){
+  var rows = [];
+  var validItems = ITEMS.map(function(it){return it.id;}).concat(["TOPPING"]);
+  var validSizes = SIZE_KEYS.concat(["PHAN"]);
+  data.forEach(function(r, idx){
+    var date = (r.Ngay||"").trim();
+    var store = (r.MaCH||"").trim();
+    var mon = (r.MaMon||"").trim().toUpperCase();
+    var size = (r.Size||"").trim().toUpperCase();
+    var qty = Number(r.SoLuong);
+    var rowErrors = [];
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) rowErrors.push("ngày không đúng định dạng YYYY-MM-DD");
+    if(!STORE_MAP[store]) rowErrors.push("mã cửa hàng không tồn tại");
+    if(validItems.indexOf(mon)===-1) rowErrors.push("mã món không hợp lệ");
+    if(validSizes.indexOf(size)===-1) rowErrors.push("size không hợp lệ");
+    if(isNaN(qty) || qty<0) rowErrors.push("số lượng không hợp lệ");
+    rows.push({line: idx+2, date:date, store:store, mon:mon, size:size, qty:qty, errors: rowErrors});
+  });
+  return {rows:rows, skippedZero:0};
+}
+
+function renderImportPreview(){
+  var container = document.getElementById("import-preview");
+  if(!container || !state.importRows) return;
+  var rows = state.importRows;
+  var validCount = rows.filter(function(r){ return r.errors.length===0; }).length;
+  var html = "";
+  html += '<div class="hint" style="margin:10px 0;">Đọc được '+rows.length+' dòng — hợp lệ '+validCount+', lỗi '+(rows.length-validCount)+(state.importSkippedZero ? ', đã tự bỏ qua '+state.importSkippedZero+' dòng có Tổng tiền = 0đ (không tính vào số lượng)' : '')+'.</div>';
+  html += '<div class="table-scroll" style="max-height:320px;overflow-y:auto;"><table><thead><tr><th>Dòng</th><th>Ngày</th><th>Mã CH</th><th>Món</th><th>Size</th><th class="num">SL</th><th>Trạng thái</th></tr></thead><tbody>';
+  rows.slice(0,300).forEach(function(r){
+    var ok = r.errors.length===0;
+    var monLabel = ITEM_MAP[r.mon] || r.mon;
+    html += '<tr><td>'+r.line+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.store)+'</td><td>'+esc(monLabel)+'</td><td>'+esc(r.size)+'</td><td class="num">'+esc(r.qty)+'</td>';
+    html += '<td>'+(ok ? '<span class="pill good">OK</span>' : '<span class="pill bad" title="'+esc(r.errors.join("; "))+'">Lỗi: '+esc(r.errors.join(", "))+'</span>')+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  if(rows.length>300) html += '<div class="hint">Chỉ hiển thị 300 dòng đầu để xem trước, toàn bộ dòng hợp lệ vẫn sẽ được nhập.</div>';
+  html += '<div class="toolbar" style="margin-top:12px;"><button class="btn" id="btn-commit-import" '+(validCount===0?'disabled':'')+'>Nhập '+validCount+' dòng hợp lệ vào hệ thống</button><span id="import-msg" class="hint"></span></div>';
+  container.innerHTML = html;
+  var btn = document.getElementById("btn-commit-import");
+  if(btn) btn.addEventListener("click", commitImport);
+}
+
+async function commitImport(){
+  var rows = (state.importRows||[]).filter(function(r){ return r.errors.length===0; });
+  var msgEl = document.getElementById("import-msg");
+  if(rows.length===0) return;
+  if(msgEl) msgEl.textContent = "Đang nhập dữ liệu…";
+
+  // Gom nhóm theo (ngày, cửa hàng); TÍNH LẠI TOÀN BỘ từ nội dung file (không cộng dồn với dữ liệu cũ đã lưu
+  // cho đúng ngày-cửa hàng đó), để tránh nhân đôi số liệu khi nhập lại file đã sửa hoặc nhập lại file cũ.
+  // Doanh thu lấy đúng theo cột "Tổng tiền" thật của từng dòng; dòng nào không có số tiền (file không có cột này)
+  // mới tạm tính theo bảng giá chuẩn.
+  var groups = {};
+  rows.forEach(function(r){
+    var id = docId(r.date, r.store);
+    if(!groups[id]) groups[id] = {date:r.date, storeCode:r.store, items: emptyItems(), itemsRevenue: emptyItemsRevenue(), toppingExtra: 0, toppingRevenue: 0};
+    var rowAmount = (r.amount!=null && !isNaN(r.amount)) ? Number(r.amount) : null;
+    if(r.mon === "TOPPING"){
+      groups[id].toppingExtra += r.qty;
+      groups[id].toppingRevenue += (rowAmount!=null ? rowAmount : r.qty*TOPPING_PRICE);
+    } else {
+      if(!groups[id].items[r.mon]) groups[id].items[r.mon] = {S:0,M:0,L1L:0,X1L:0};
+      if(!groups[id].itemsRevenue[r.mon]) groups[id].itemsRevenue[r.mon] = {S:0,M:0,L1L:0,X1L:0};
+      groups[id].items[r.mon][r.size] = (groups[id].items[r.mon][r.size]||0) + r.qty;
+      groups[id].itemsRevenue[r.mon][r.size] = (groups[id].itemsRevenue[r.mon][r.size]||0) + (rowAmount!=null ? rowAmount : r.qty*(PRICE[r.size]||0));
+    }
+  });
+
+  var keys = Object.keys(groups);
+  var done = 0;
+  for(var i=0;i<keys.length;i++){
+    var g = groups[keys[i]];
+    var entryData = {
+      date: g.date, storeCode: g.storeCode, storeName: STORE_MAP[g.storeCode] || g.storeCode,
+      items: g.items, itemsRevenue: g.itemsRevenue, toppingExtra: g.toppingExtra, toppingRevenue: g.toppingRevenue, updatedAt: Date.now()
+    };
+    try{
+      await persistEntry(entryData);
+      done++;
+      if(msgEl) msgEl.textContent = "Đang nhập… ("+done+"/"+keys.length+" cửa hàng-ngày)";
+    }catch(e){
+      console.error(e);
+      if(msgEl) msgEl.textContent = "Dừng lại do lỗi: " + (e && e.message ? e.message : "không rõ nguyên nhân");
+      return;
+    }
+  }
+  if(msgEl) msgEl.textContent = "Đã nhập xong "+rows.length+" dòng vào "+keys.length+" cửa hàng-ngày.";
+  state.importRows = null;
+}
+
+/* ============ RENDER: CÀI ĐẶT MỤC TIÊU ============ */
+
+function renderSettings(){
+  var s = state.settings;
+  var out = "";
+  out += '<div class="grid-2">';
+
+  out += '<div class="card">';
+  out += '<div class="label" style="font-weight:700;font-size:14px;margin-bottom:10px;">Mục tiêu hệ thống &amp; kênh online</div>';
+  out += '<div class="field-row">';
+  out += '<div class="field"><label>Mục tiêu doanh thu hệ thống (VNĐ)</label><input type="number" min="0" step="1000" id="set-system-target" value="'+(s.systemTarget||0)+'"></div>';
+  out += '<div class="field" style="max-width:140px;"><label>Mục tiêu kênh online (%)</label><input type="number" min="0" max="100" step="0.1" id="set-online-pct" value="'+(s.onlineChannelPct||0)+'"></div>';
+  out += '</div>';
+  out += '<div class="hint" id="set-system-preview"></div>';
+  out += '<div class="toolbar" style="margin-top:10px;"><button class="btn secondary" id="set-apply-online">Dùng số này làm mục tiêu doanh thu online</button></div>';
+  out += '</div>';
+
+  out += '<div class="card">';
+  out += '<div class="label" style="font-weight:700;font-size:14px;margin-bottom:10px;">Mục tiêu chiến dịch (kênh online)</div>';
+  out += '<div class="field-row">';
+  out += '<div class="field"><label>Tổng mục tiêu doanh thu (VNĐ)</label><input type="number" min="0" step="1000" id="set-target" value="'+(s.totalTarget||0)+'"></div>';
+  out += '<div class="field"><label>Tổng mục tiêu số lượng (ly)</label><input type="number" min="0" step="1" id="set-qty-target" value="'+(s.totalQtyTarget||0)+'"></div>';
+  out += '</div>';
+  out += '<div class="field-row">';
+  out += '<div class="field"><label>Ngày bắt đầu</label><input type="date" id="set-start" value="'+(s.startDate||"")+'"></div>';
+  out += '<div class="field"><label>Ngày kết thúc</label><input type="date" id="set-end" value="'+(s.endDate||"")+'"></div>';
+  out += '</div>';
+  var days = (s.startDate && s.endDate) ? dateRangeArray(s.startDate, s.endDate).length : 0;
+  out += '<div class="hint" id="set-preview">'+(days>0 ? ("Chiến dịch "+days+" ngày — mục tiêu/ngày: "+fmtVND((s.totalTarget||0)/days)+", "+fmtNum((s.totalQtyTarget||0)/days)+" ly/ngày") : "Nhập đủ ngày bắt đầu/kết thúc để hệ thống tự chia mục tiêu theo ngày.")+'</div>';
+  out += '<div class="toolbar" style="margin-top:14px;"><button class="btn" id="set-save">Lưu mục tiêu</button><span id="set-msg" class="hint"></span></div>';
+  out += '</div>';
+
+  out += '<div class="card">';
+  out += '<div class="label" style="font-weight:700;font-size:14px;margin-bottom:10px;">Bảng giá áp dụng (đồng giá các món)</div>';
+  out += '<table><thead><tr><th>Size</th><th class="num">Giá bán</th></tr></thead><tbody>';
+  SIZE_KEYS.forEach(function(sk){
+    out += '<tr><td>'+SIZE_LABELS[sk]+'</td><td class="num">'+fmtVND(PRICE[sk])+'</td></tr>';
+  });
+  out += '<tr><td>'+esc(TOPPING_LABEL)+'</td><td class="num">'+fmtVND(TOPPING_PRICE)+'/phần</td></tr>';
+  out += '</tbody></table>';
+  out += '<div class="hint" style="margin-top:10px;">6 món áp dụng đồng giá theo size: Trà Bí Đao Hạt Chia, Sương Sáo, Trân Châu Đen, Trân Châu Giòn, Chanh Nha Đam, Tắc Nha Đam. Mỗi món đã bao gồm phần thạch Bí Đao + topping tương ứng.</div>';
+  out += '</div>';
+
+  out += '</div>';
+
+  out += '<div class="card"><div class="label" style="font-weight:700;font-size:14px;margin-bottom:8px;">Danh sách cửa hàng tham gia chiến dịch ('+STORES.length+' cửa hàng)</div>';
+  out += '<div class="stores-chip-list">';
+  STORES.forEach(function(s2){ out += '<span class="chip">'+esc(s2.code)+' — '+esc(s2.name)+'</span>'; });
+  out += '</div></div>';
+
+  return out;
+}
+
+function refreshSystemTargetPreview(){
+  var sysT = Number((document.getElementById("set-system-target")||{}).value || 0);
+  var pct = Number((document.getElementById("set-online-pct")||{}).value || 0);
+  var el = document.getElementById("set-system-preview");
+  if(el) el.textContent = "Mục tiêu kênh online tương ứng: " + fmtVND(sysT*pct/100);
+}
+
+async function saveSettingsForm(){
+  var target = Math.max(0, Number(document.getElementById("set-target").value || 0));
+  var qtyTarget = Math.max(0, Number(document.getElementById("set-qty-target").value || 0));
+  var systemTarget = Math.max(0, Number(document.getElementById("set-system-target").value || 0));
+  var onlineChannelPct = Math.max(0, Number(document.getElementById("set-online-pct").value || 0));
+  var start = document.getElementById("set-start").value;
+  var end = document.getElementById("set-end").value;
+  var msgEl = document.getElementById("set-msg");
+  if(start && end && start>end){
+    if(msgEl) msgEl.textContent = "Ngày bắt đầu phải trước ngày kết thúc.";
+    return;
+  }
+  try{
+    if(msgEl) msgEl.textContent = "Đang lưu…";
+    await persistSettings({
+      totalTarget: target, totalQtyTarget: qtyTarget,
+      systemTarget: systemTarget, onlineChannelPct: onlineChannelPct,
+      startDate: start, endDate: end
+    });
+    if(msgEl) msgEl.textContent = "Đã lưu mục tiêu chiến dịch.";
+    render();
+  }catch(e){
+    console.error(e);
+    if(msgEl) msgEl.textContent = "Lỗi khi lưu: " + (e && e.message ? e.message : "không rõ nguyên nhân");
+  }
+}
+
+/* ============ XUẤT BÁO CÁO CSV ============ */
+
+function buildExportCSV(){
+  var s = state.settings;
+  var hasRange = s.startDate && s.endDate;
+  var entries = hasRange ? entriesInRange(s.startDate, s.endDate) : allEntriesArray();
+  var lines = [];
+  lines.push("BAO CAO CHIEN DICH TRA BI DAO");
+  lines.push("Tong muc tieu doanh thu," + (s.totalTarget||0));
+  lines.push("Tong muc tieu so luong (ly)," + (s.totalQtyTarget||0));
+  lines.push("Tu ngay," + (s.startDate||"") + ",Den ngay," + (s.endDate||""));
+  lines.push("");
+  lines.push("Ngay,Muc tieu DT ngay,Doanh thu,Ty le dat DT (%),Muc tieu SL ngay,So ly,Ty le dat SL (%)");
+  var days = hasRange ? dateRangeArray(s.startDate, s.endDate) : [];
+  var dailyTarget = (hasRange && days.length>0) ? (Number(s.totalTarget||0)/days.length) : 0;
+  var dailyQtyTarget = (hasRange && days.length>0) ? (Number(s.totalQtyTarget||0)/days.length) : 0;
+  var byDay = aggregateByDay(entries);
+  days.forEach(function(d){
+    var rec = byDay[d] || {rev:0, ly:0};
+    var p = dailyTarget>0 ? (rec.rev/dailyTarget*100) : 0;
+    var pQty = dailyQtyTarget>0 ? (rec.ly/dailyQtyTarget*100) : 0;
+    lines.push([d, dailyTarget.toFixed(0), rec.rev.toFixed(0), p.toFixed(1), dailyQtyTarget.toFixed(0), rec.ly, pQty.toFixed(1)].join(","));
+  });
+  lines.push("");
+  lines.push("Ma CH,Ten CH,So ly,Doanh thu");
+  var byStore = aggregateByStore(entries);
+  Object.keys(byStore).sort(function(a,b){return byStore[b].rev-byStore[a].rev;}).forEach(function(code){
+    lines.push([code, '"'+(STORE_MAP[code]||code)+'"', byStore[code].ly, byStore[code].rev.toFixed(0)].join(","));
+  });
+  lines.push("");
+  lines.push("Mon,Size S,Size M,Ly 1L,Xo 1L,Tong ly,Doanh thu");
+  var agg = aggregateByItem(entries);
+  ITEMS.forEach(function(it){
+    var d = agg.items[it.id];
+    var total = SIZE_KEYS.reduce(function(a,k){return a+d[k];},0);
+    lines.push(['"'+it.name+'"', d.S, d.M, d.L1L, d.X1L, total, d.rev.toFixed(0)].join(","));
+  });
+  lines.push(['"'+TOPPING_LABEL+'"', "-", "-", "-", "-", agg.topping.qty, agg.topping.rev.toFixed(0)].join(","));
+  return lines.join("\n");
+}
+
+async function exportReport(){
+  var csv = buildExportCSV();
+  try{
+    var downloads = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
+    if(downloads){
+      await downloads.save({filename: "bao_cao_tra_bi_dao_"+todayStr()+".csv", data: csv});
+      return;
+    }
+  }catch(e){ console.error(e); }
+  // fallback: mở tab mới chứa nội dung để người dùng tự copy nếu không có quyền tải file
+  var w = window.open("", "_blank");
+  if(w){ w.document.write("<pre>"+csv.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</pre>"); }
+}
+
+async function downloadTemplate(){
+  var csv = csvTemplateText();
+  try{
+    var downloads = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null;
+    if(downloads){
+      await downloads.save({filename: "mau_nhap_lieu.csv", data: csv});
+      return;
+    }
+  }catch(e){ console.error(e); }
+  var w = window.open("", "_blank");
+  if(w){ w.document.write("<pre>"+csv+"</pre>"); }
+}
+
+/* ============ GẮN SỰ KIỆN ============ */
+
+function bindEvents(){
+  var tabButtons = root.querySelectorAll("nav.tabs button");
+  tabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){ switchTab(btn.getAttribute("data-tab")); });
+  });
+
+  if(state.tab === "dashboard"){
+    var expBtn = document.getElementById("btn-export");
+    if(expBtn) expBtn.addEventListener("click", exportReport);
+    var storeRows = root.querySelectorAll(".store-row");
+    storeRows.forEach(function(rowEl){
+      rowEl.addEventListener("click", function(){
+        var code = rowEl.getAttribute("data-store");
+        state.expandedStore = (state.expandedStore === code) ? null : code;
+        render();
+      });
+    });
+  }
+
+  if(state.tab === "dataentry"){
+    var dateEl = document.getElementById("de-date");
+    var storeEl = document.getElementById("de-store");
+    if(dateEl) dateEl.addEventListener("change", loadEntryIntoForm);
+    if(storeEl) storeEl.addEventListener("change", loadEntryIntoForm);
+    var tbody = document.getElementById("de-tbody");
+    if(tbody) tbody.addEventListener("input", updateDataEntryPreview);
+    var topInput = document.getElementById("de-topping");
+    if(topInput) topInput.addEventListener("input", updateDataEntryPreview);
+    var saveBtn = document.getElementById("de-save");
+    if(saveBtn) saveBtn.addEventListener("click", saveDataEntryForm);
+    loadEntryIntoForm();
+  }
+
+  if(state.tab === "import"){
+    var tmplBtn = document.getElementById("btn-template");
+    if(tmplBtn) tmplBtn.addEventListener("click", downloadTemplate);
+    var fileInput = document.getElementById("import-file");
+    if(fileInput){
+      fileInput.addEventListener("change", function(ev){
+        var file = ev.target.files[0];
+        if(!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e){
+          var parsed = parseCSV(e.target.result);
+          state.importRows = parsed.rows;
+          state.importSkippedZero = parsed.skippedZero || 0;
+          renderImportPreview();
+        };
+        reader.readAsText(file, "UTF-8");
+      });
+    }
+  }
+
+  if(state.tab === "settings"){
+    var startEl = document.getElementById("set-start");
+    var endEl = document.getElementById("set-end");
+    var targetEl = document.getElementById("set-target");
+    var qtyTargetEl = document.getElementById("set-qty-target");
+    function refreshPreview(){
+      var t = Number(targetEl.value||0);
+      var q = Number(qtyTargetEl.value||0);
+      var st = startEl.value, en = endEl.value;
+      var days = (st && en) ? dateRangeArray(st,en).length : 0;
+      var el = document.getElementById("set-preview");
+      if(el) el.textContent = days>0 ? ("Chiến dịch "+days+" ngày — mục tiêu/ngày: "+fmtVND(t/days)+", "+fmtNum(q/days)+" ly/ngày") : "Nhập đủ ngày bắt đầu/kết thúc để hệ thống tự chia mục tiêu theo ngày.";
+    }
+    if(startEl) startEl.addEventListener("change", refreshPreview);
+    if(endEl) endEl.addEventListener("change", refreshPreview);
+    if(targetEl) targetEl.addEventListener("input", refreshPreview);
+    if(qtyTargetEl) qtyTargetEl.addEventListener("input", refreshPreview);
+    var saveBtn = document.getElementById("set-save");
+    if(saveBtn) saveBtn.addEventListener("click", saveSettingsForm);
+
+    var sysTargetEl = document.getElementById("set-system-target");
+    var onlinePctEl = document.getElementById("set-online-pct");
+    if(sysTargetEl) sysTargetEl.addEventListener("input", refreshSystemTargetPreview);
+    if(onlinePctEl) onlinePctEl.addEventListener("input", refreshSystemTargetPreview);
+    refreshSystemTargetPreview();
+    var applyBtn = document.getElementById("set-apply-online");
+    if(applyBtn) applyBtn.addEventListener("click", function(){
+      var sysT = Number(sysTargetEl.value||0);
+      var pct = Number(onlinePctEl.value||0);
+      targetEl.value = Math.round(sysT*pct/100);
+      refreshPreview();
+    });
+  }
+}
+
+/* ============ KHỞI CHẠY ============ */
+
+render();
+initStorage();
+
+})();
+</script>
+</body>
+</html>
