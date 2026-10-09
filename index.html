@@ -218,6 +218,10 @@
   table.daily-table tbody tr.today-row td { background: var(--jade-tint) !important; font-weight: 600; }
   table.daily-table tbody tr.today-row td:first-child { border-left: 3px solid var(--jade); }
   table.daily-table tbody tr.future-row td { color: var(--ink-soft); opacity: 0.55; }
+  .delta { font-weight:700; font-size:12.5px; }
+  .delta.up { color: var(--good); }
+  .delta.down { color: var(--bad); }
+  .delta.flat { color: var(--ink-soft); }
   .pill.neutral { background: var(--line); color: var(--ink-soft); }
   .today-badge { font-size: 10px; font-weight: 700; color: var(--jade); margin-left: 6px; }
   @media (max-width: 640px) {
@@ -609,13 +613,16 @@ function renderDashboard(){
     var byDay = aggregateByDay(entries);
     var todayISO = todayStr();
     out += '<table class="daily-table"><thead>';
-    out += '<tr><th rowspan="2" style="vertical-align:bottom;">Ngày</th><th colspan="4" class="grp grp-rev">Doanh thu</th><th colspan="4" class="grp grp-qty col-divider">Số lượng</th></tr>';
-    out += '<tr><th class="num grp-rev-cell">Mục tiêu</th><th class="num grp-rev-cell">Đạt được</th><th class="num grp-rev-cell">% đạt</th><th class="num grp-rev-cell">Còn thiếu</th>';
-    out += '<th class="num grp-qty-cell col-divider">Mục tiêu</th><th class="num grp-qty-cell">Đạt được</th><th class="num grp-qty-cell">% đạt</th><th class="num grp-qty-cell">Còn thiếu</th></tr>';
+    out += '<tr><th rowspan="2" style="vertical-align:bottom;">Ngày</th><th colspan="5" class="grp grp-rev">Doanh thu</th><th colspan="5" class="grp grp-qty col-divider">Số lượng</th></tr>';
+    out += '<tr><th class="num grp-rev-cell">Mục tiêu</th><th class="num grp-rev-cell">Đạt được</th><th class="num grp-rev-cell">% đạt</th><th class="num grp-rev-cell">Tăng/giảm so với hôm trước</th><th class="num grp-rev-cell">Còn thiếu</th>';
+    out += '<th class="num grp-qty-cell col-divider">Mục tiêu</th><th class="num grp-qty-cell">Đạt được</th><th class="num grp-qty-cell">% đạt</th><th class="num grp-qty-cell">Tăng/giảm so với hôm trước</th><th class="num grp-qty-cell">Còn thiếu</th></tr>';
     out += '</thead><tbody>';
+    var prevRec = null;
     days.forEach(function(d){
       var rec = byDay[d] || {rev:0, ly:0};
       var isFuture = d > todayISO;
+      var chgRev = isFuture ? '<span class="hint">—</span>' : deltaCell(rec.rev, prevRec ? prevRec.rev : null);
+      var chgQty = isFuture ? '<span class="hint">—</span>' : deltaCell(rec.ly, prevRec ? prevRec.ly : null);
       var isToday = d === todayISO;
       var rowClass = isToday ? "today-row" : (isFuture ? "future-row" : "");
       var p = dailyTarget>0 ? (rec.rev/dailyTarget*100) : 0;
@@ -629,13 +636,16 @@ function renderDashboard(){
       out += '<tr class="'+rowClass+'"><td>'+fmtDateVN(d)+(isToday?'<span class="today-badge">HÔM NAY</span>':'')+'</td>';
       out += '<td class="num grp-rev-cell">'+fmtVND(dailyTarget)+'</td><td class="num strong grp-rev-cell">'+fmtVND(rec.rev)+'</td>';
       out += '<td class="num grp-rev-cell"><span class="pill '+pillClass+'">'+(isFuture?'—':p.toFixed(0)+'%')+'</span></td>';
+      out += '<td class="num grp-rev-cell">'+chgRev+'</td>';
       out += '<td class="num grp-rev-cell">'+missingCell+'</td>';
       out += '<td class="num grp-qty-cell col-divider">'+fmtNum(dailyQtyTarget)+' ly</td><td class="num strong grp-qty-cell">'+fmtNum(rec.ly)+' ly</td>';
       out += '<td class="num grp-qty-cell"><span class="pill '+pillClassQty+'">'+(isFuture?'—':pQty.toFixed(0)+'%')+'</span></td>';
+      out += '<td class="num grp-qty-cell">'+chgQty+'</td>';
       out += '<td class="num grp-qty-cell">'+missingQtyCell+'</td></tr>';
+      prevRec = rec;
     });
     out += '</tbody></table>';
-    out += '<div class="hint" style="margin-top:10px;">🟢 Xanh = nhóm Doanh thu · 🟠 Nâu = nhóm Số lượng · Dòng mờ = ngày chưa tới (chưa tính là thiếu) · Dòng viền xanh = hôm nay.</div>';
+    out += '<div class="hint" style="margin-top:10px;">🟢 Xanh = nhóm Doanh thu · 🟠 Nâu = nhóm Số lượng · Dòng mờ = ngày chưa tới (chưa tính là thiếu) · Dòng viền xanh = hôm nay · ▲/▼ = tăng/giảm % so với ngày liền trước (ngày hôm nay có thể chưa đủ số nên có thể đang thấp hơn).</div>';
   }
   out += '</div>';
 
@@ -717,6 +727,16 @@ function renderStoreDetailRow(code, entries){
   }
   out += '</tbody></table></div>';
   return out;
+}
+
+// Tăng/giảm % so với ngày liền trước (▲ xanh = tăng, ▼ đỏ = giảm)
+function deltaCell(cur, prev){
+  if(prev==null) return '<span class="hint">—</span>';
+  if(!(prev>0)) return cur>0 ? '<span class="delta up">▲ mới</span>' : '<span class="hint">—</span>';
+  var pct = (cur-prev)/prev*100;
+  if(Math.abs(pct) < 0.05) return '<span class="delta flat">0%</span>';
+  var up = pct>0;
+  return '<span class="delta '+(up?'up':'down')+'">'+(up?'▲ +':'▼ ')+pct.toFixed(1)+'%</span>';
 }
 
 function kpiCard(label, value, cls){
@@ -947,10 +967,20 @@ function parseRealExportRows(data){
     var storeCode = storeRaw.split(" - ")[0].trim();
     if(!STORE_MAP[storeCode]) rowErrors.push("mã cửa hàng không tồn tại (\""+storeRaw+"\")");
 
-    var m = monRaw.match(/^(.*?)(?:\s*\(([^)]*)\))?\s*$/);
-    var baseName = (m ? m[1] : monRaw).trim();
-    var suffix = (m && m[2]) ? m[2].trim().toLowerCase() : "";
+    // Chuẩn hoá tên món: bỏ phần dịch tiếng Trung sau dấu "/" (VD "... (Size 1L)/ 奇亞籽冬瓜茶（桶裝1L）"),
+    // đổi ngoặc full-width thành ngoặc thường, rồi mới tách tên gốc + size trong ngoặc.
+    var monClean = monRaw.split("/")[0].replace(/（/g,"(").replace(/）/g,")").trim();
+    var sufM = monClean.match(/\(([^)]*)\)/);
+    var suffix = sufM ? sufM[1].trim().toLowerCase() : "";
+    var baseName = monClean.replace(/\([^)]*\)/g,"").replace(/\s+/g," ").trim();
     var itemId = ITEM_NAME_TO_ID[baseName.toLowerCase()];
+    if(!itemId){
+      // dự phòng: khớp theo tiền tố tên món chuẩn (phòng khi có ký tự/ghi chú lạ phía sau)
+      var lowerClean = monClean.toLowerCase();
+      ITEMS.forEach(function(it){
+        if(!itemId && lowerClean.indexOf(it.name.toLowerCase())===0) itemId = it.id;
+      });
+    }
     if(!itemId) rowErrors.push("không nhận diện được tên món (\""+monRaw+"\")");
 
     var size = null;
@@ -1163,16 +1193,20 @@ function buildExportCSV(){
   lines.push("Tong muc tieu so luong (ly)," + (s.totalQtyTarget||0));
   lines.push("Tu ngay," + (s.startDate||"") + ",Den ngay," + (s.endDate||""));
   lines.push("");
-  lines.push("Ngay,Muc tieu DT ngay,Doanh thu,Ty le dat DT (%),Muc tieu SL ngay,So ly,Ty le dat SL (%)");
+  lines.push("Ngay,Muc tieu DT ngay,Doanh thu,Ty le dat DT (%),Tang/giam DT so voi hom truoc (%),Muc tieu SL ngay,So ly,Ty le dat SL (%),Tang/giam SL so voi hom truoc (%)");
   var days = hasRange ? dateRangeArray(s.startDate, s.endDate) : [];
   var dailyTarget = (hasRange && days.length>0) ? (Number(s.totalTarget||0)/days.length) : 0;
   var dailyQtyTarget = (hasRange && days.length>0) ? (Number(s.totalQtyTarget||0)/days.length) : 0;
   var byDay = aggregateByDay(entries);
+  var prevX = null;
   days.forEach(function(d){
     var rec = byDay[d] || {rev:0, ly:0};
     var p = dailyTarget>0 ? (rec.rev/dailyTarget*100) : 0;
     var pQty = dailyQtyTarget>0 ? (rec.ly/dailyQtyTarget*100) : 0;
-    lines.push([d, dailyTarget.toFixed(0), rec.rev.toFixed(0), p.toFixed(1), dailyQtyTarget.toFixed(0), rec.ly, pQty.toFixed(1)].join(","));
+    var cR = (prevX && prevX.rev>0) ? ((rec.rev-prevX.rev)/prevX.rev*100).toFixed(1) : "";
+    var cQ = (prevX && prevX.ly>0) ? ((rec.ly-prevX.ly)/prevX.ly*100).toFixed(1) : "";
+    lines.push([d, dailyTarget.toFixed(0), rec.rev.toFixed(0), p.toFixed(1), cR, dailyQtyTarget.toFixed(0), rec.ly, pQty.toFixed(1), cQ].join(","));
+    prevX = rec;
   });
   lines.push("");
   lines.push("Ma CH,Ten CH,So ly,Doanh thu");
